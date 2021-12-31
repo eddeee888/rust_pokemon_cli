@@ -16,8 +16,7 @@ pub fn get_command_enum(cmd: &str) -> Result<CommandEnum> {
 
 const BASE_ENDPOINT: &str = "https://pokeapi.co/api/v2/";
 
-#[tokio::main]
-pub async fn make_request(cmd_enum: CommandEnum, arg: &str) -> Result<&str> {
+pub fn make_request(cmd_enum: CommandEnum, arg: &str) -> Result<&str> {
   info!("Making request...");
   let endpoint = match cmd_enum {
     CommandEnum::FindByName => format!("{}pokemon/", BASE_ENDPOINT),
@@ -25,7 +24,7 @@ pub async fn make_request(cmd_enum: CommandEnum, arg: &str) -> Result<&str> {
   let endpoint = format!("{}{}", endpoint, arg);
   info!("=> Endpoint: {}", endpoint);
 
-  let resp = reqwest::get(endpoint).await?;
+  let resp = reqwest::blocking::get(endpoint)?;
   info!("Unpacking response...");
   info!("=> Response status: {}", resp.status());
 
@@ -36,7 +35,7 @@ pub async fn make_request(cmd_enum: CommandEnum, arg: &str) -> Result<&str> {
   };
 
   // Parse the response body as Json in this case
-  let data = resp.json::<HashMap<String, String>>().await?;
+  let data = resp.json::<HashMap<String, String>>()?;
   info!("=> Response data: {:?}", data);
 
   Ok("")
