@@ -1,33 +1,37 @@
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result};
+use log::info;
 use std::string::String;
 use structopt::StructOpt;
 
 /// Search for a pattern in a file and display the lines that contain it.
 #[derive(StructOpt)]
 struct Cli {
-  /// The pattern to look for
+  /// Command
   command: String,
-  /// The path to the file to read
-  term: String,
+  /// Search term
+  arg: String,
 }
-
-const BASE_ENDPOINT: &str = "https://pokeapi.co/api/v2/";
 
 fn main() -> Result<()> {
-  let args = Cli::from_args();
+  env_logger::init();
 
-  let cmd = get_endpoint_by_command(&args.command)
+  info!("Start!");
+  info!("Parsing args...");
+  let args = Cli::from_args();
+  info!(
+    "=> {}",
+    format!("Command: \"{}\", Arg: \"{}\"", &args.command, &args.arg)
+  );
+
+  let cmd_enum = rust_pokemon_cli::get_command_enum(&args.command)
     .with_context(|| format!("Invalid command: {}", &args.command))?;
 
-  println!("{}", cmd);
-  println!("{}", &args.term);
+  match rust_pokemon_cli::make_request(cmd_enum, &args.arg) {
+    Ok(res) => println!("Result: {}", res),
+    Err(err) => println!("Error: {}", err),
+  }
+
+  info!("End!");
 
   Ok(())
-}
-
-fn get_endpoint_by_command(cmd: &String) -> Result<String> {
-  match cmd.as_str() {
-    "findByName" => Ok(format!("{}pokemon/", BASE_ENDPOINT)),
-    _ => Err(anyhow!("invalid_command")),
-  }
 }
