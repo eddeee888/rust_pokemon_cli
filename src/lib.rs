@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Result};
 use log::info;
 use reqwest::StatusCode;
-use std::collections::HashMap;
+use serde_json;
 
 pub enum CommandEnum {
   FindByName,
@@ -16,7 +16,7 @@ pub fn get_command_enum(cmd: &str) -> Result<CommandEnum> {
 
 const BASE_ENDPOINT: &str = "https://pokeapi.co/api/v2/";
 
-pub fn make_request(cmd_enum: CommandEnum, arg: &str) -> Result<&str> {
+pub fn make_request(cmd_enum: CommandEnum, arg: &str) -> Result<String> {
   info!("Making request...");
   let endpoint = match cmd_enum {
     CommandEnum::FindByName => format!("{}pokemon/", BASE_ENDPOINT),
@@ -34,9 +34,8 @@ pub fn make_request(cmd_enum: CommandEnum, arg: &str) -> Result<&str> {
     _ => return Err(anyhow!("HTTP error: {}", resp.status())),
   };
 
-  // Parse the response body as Json in this case
-  let data = resp.json::<HashMap<String, String>>()?;
-  info!("=> Response data: {:?}", data);
+  let data = resp.json::<serde_json::Value>()?;
 
-  Ok("")
+  // TODO: format data
+  Ok(format!("{}", data))
 }

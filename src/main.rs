@@ -15,6 +15,7 @@ struct Cli {
 fn main() -> Result<()> {
   env_logger::init();
 
+  info!("Start!");
   info!("Parsing args...");
   let args = Cli::from_args();
   info!(
@@ -29,6 +30,8 @@ fn main() -> Result<()> {
     Ok(res) => println!("Result: {}", res),
     Err(err) => println!("Error: {}", err),
   }
+
+  info!("End!");
 
   Ok(())
 }
