@@ -1,6 +1,7 @@
 use anyhow::{anyhow, Result};
 use log::info;
 use reqwest::StatusCode;
+use serde::Deserialize;
 use serde_json;
 use std::fmt;
 
@@ -37,12 +38,13 @@ pub fn make_request(cmd_enum: CommandEnum, arg: &str) -> Result<String> {
 
   let data = resp.json::<serde_json::Value>()?;
 
-  match convert_data_to_pokemon(&data) {
+  match convert_data_to_pokemon(data) {
     Ok(p) => return Ok(format!("{}", p)),
     Err(e) => return Err(anyhow!(e)),
   }
 }
 
+#[derive(Deserialize, Debug)]
 struct PokemonStats {
   hp: u32,
   attack: u32,
@@ -51,6 +53,8 @@ struct PokemonStats {
   special_defense: u32,
   speed: u32,
 }
+
+#[derive(Deserialize, Debug)]
 struct Pokemon {
   id: u32,
   name: String,
@@ -64,7 +68,6 @@ impl std::fmt::Display for Pokemon {
     // stream: `f`. Returns `fmt::Result` which indicates whether the
     // operation succeeded or failed. Note that `write!` uses syntax which
     // is very similar to `println!`.
-
     write!(
       f,
       " ID: {}\n Name: {}\n Types: {}\n Stats:\n  HP: {}\n  Atk: {}\n  Def: {}\n  Sp.Atk: {}\n  Sp.Def: {}\n  Spd: {}\n",
@@ -81,21 +84,67 @@ impl std::fmt::Display for Pokemon {
   }
 }
 
-fn convert_data_to_pokemon(data: &serde_json::Value) -> Result<Pokemon> {
-  let stats = PokemonStats {
-    hp: 48,
-    attack: 48,
-    defense: 48,
-    special_attack: 48,
-    special_defense: 48,
-    speed: 48,
+#[derive(Deserialize, Debug)]
+struct ApiPokemonType {
+  name: String,
+}
+
+#[derive(Deserialize, Debug)]
+struct ApiPokemonTypeWrapper {
+  r#type: ApiPokemonType,
+}
+
+#[derive(Deserialize, Debug)]
+struct ApiPokemonStat {
+  name: String,
+}
+#[derive(Deserialize, Debug)]
+struct ApiPokemonStatWrapper {
+  base_stat: u32,
+  stat: ApiPokemonStat,
+}
+
+#[derive(Deserialize, Debug)]
+struct ApiPokemon {
+  id: u32,
+  name: String,
+  types: Vec<ApiPokemonTypeWrapper>,
+  stats: Vec<ApiPokemonStatWrapper>,
+}
+
+fn convert_data_to_pokemon(data: serde_json::Value) -> Result<Pokemon> {
+  let api_pokemon: ApiPokemon = serde_json::from_value(data)?;
+
+  let types: Vec<String> = api_pokemon
+    .types
+    .iter()
+    .map(|t| t.r#type.name.clone())
+    .collect();
+
+  let mut stats = PokemonStats {
+    hp: 0,
+    attack: 0,
+    defense: 0,
+    special_attack: 0,
+    special_defense: 0,
+    speed: 0,
   };
-  let mut types: Vec<String> = Vec::new();
-  types.push("Normal".to_string());
+  api_pokemon
+    .stats
+    .iter()
+    .for_each(|s| match s.stat.name.as_str() {
+      "hp" => stats.hp = s.base_stat,
+      "attack" => stats.attack = s.base_stat,
+      "defense" => stats.defense = s.base_stat,
+      "special-attack" => stats.special_attack = s.base_stat,
+      "special-defense" => stats.special_defense = s.base_stat,
+      "speed" => stats.speed = s.base_stat,
+      _ => {}
+    });
 
   let pokemon = Pokemon {
-    id: 148,
-    name: "Ditto".to_string(),
+    id: api_pokemon.id,
+    name: api_pokemon.name,
     types: types,
     stats: stats,
   };
