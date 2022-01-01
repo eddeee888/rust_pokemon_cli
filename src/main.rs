@@ -27,8 +27,8 @@ fn main() -> Result<()> {
     .with_context(|| format!("Invalid command: {}", &args.command))?;
 
   match rust_pokemon_cli::make_request(cmd_enum, &args.arg) {
-    Ok(res) => println!("Result: {}", res),
-    Err(err) => println!("Error: {}", err),
+    Ok(res) => println!("Result:\n{}", res),
+    Err(err) => println!("Error:\n {}", err),
   }
 
   info!("End!");
