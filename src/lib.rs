@@ -113,6 +113,7 @@ struct ApiPokemon {
 }
 
 fn convert_data_to_pokemon(data: serde_json::Value) -> Result<Pokemon> {
+  info!("Formatting response...");
   let api_pokemon: ApiPokemon = serde_json::from_value(data)?;
 
   let types: Vec<String> = api_pokemon
@@ -120,6 +121,7 @@ fn convert_data_to_pokemon(data: serde_json::Value) -> Result<Pokemon> {
     .iter()
     .map(|t| t.r#type.name.clone())
     .collect();
+  info!("=> Pokemon types: {}", types.join(","));
 
   let mut stats = PokemonStats {
     hp: 0,
@@ -141,6 +143,7 @@ fn convert_data_to_pokemon(data: serde_json::Value) -> Result<Pokemon> {
       "speed" => stats.speed = s.base_stat,
       _ => {}
     });
+  info!("=> Pokemon stats: {:?}", stats);
 
   let pokemon = Pokemon {
     id: api_pokemon.id,
